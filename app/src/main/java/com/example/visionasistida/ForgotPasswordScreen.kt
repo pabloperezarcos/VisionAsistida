@@ -16,11 +16,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.visionasistida.data.UserStore
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun ForgotPasswordScreen(navController: NavController) {
     val haptics = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var emailTouched by remember { mutableStateOf(false) }
@@ -28,7 +32,7 @@ fun ForgotPasswordScreen(navController: NavController) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            SmallTopAppBar(title = { Text("Recuperar contraseña") })
+            TopAppBar(title = { Text("Recuperar contraseña") })
         }
     ) { inner ->
         Column(
@@ -71,19 +75,19 @@ fun ForgotPasswordScreen(navController: NavController) {
                     if (!isValidEmail(email)) {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         emailTouched = true
-                        showSnackbar(snackbarHostState, "Correo no válido")
+                        showSnack(scope, snackbarHostState, "Correo no válido")
                         return@Button
                     }
 
-                    // ¿Existe el correo en nuestra lista local?
+                    // ¿Existe el correo?
                     val exists = UserStore.users.any { it.email.equals(email.trim(), true) }
 
                     if (exists) {
                         // Simulación de envío de correo
-                        showSnackbar(snackbarHostState, "Correo de recuperación enviado")
+                        showSnack(scope, snackbarHostState, "Correo de recuperación enviado")
                     } else {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showSnackbar(snackbarHostState, "El correo no está registrado")
+                        showSnack(scope, snackbarHostState, "El correo no está registrado")
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -106,13 +110,10 @@ fun ForgotPasswordScreen(navController: NavController) {
 private fun isValidEmail(email: String): Boolean =
     email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
 
-private suspend fun SnackbarHostState.safeShow(message: String) {
-    currentSnackbarData?.dismiss()
-    showSnackbar(message)
-}
-
-private fun showSnackbar(host: SnackbarHostState, message: String) {
-    androidx.compose.runtime.LaunchedEffect(message) {
-        host.safeShow(message)
+// Utilidad para mostrar snackbars desde eventos onClick
+private fun showSnack(scope: CoroutineScope, host: SnackbarHostState, message: String) {
+    scope.launch {
+        host.currentSnackbarData?.dismiss()
+        host.showSnackbar(message)
     }
 }

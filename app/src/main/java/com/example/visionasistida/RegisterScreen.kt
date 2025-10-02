@@ -18,11 +18,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.visionasistida.data.UserStore
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(navController: NavController) {
     val haptics = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -146,16 +150,15 @@ fun RegisterScreen(navController: NavController) {
                     if (!emailOk || !passOk || !confirmOk) {
                         emailTouched = true; passTouched = true; confirmTouched = true
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showSnackbar(snackbarHostState, "Revisa los campos del formulario")
+                        showSnack(scope, snackbarHostState, "Revisa los campos del formulario")
                         return@Button
                     }
 
-                    // Alta en UserStore (cumpliendo tope 5 y sin duplicados)
                     when (UserStore.addUser(email, password)) {
                         UserStore.AddResult.OK -> {
                             // Limpia y vuelve al login sin dejar rastro en back stack
                             email = ""; password = ""; confirmPassword = ""
-                            showSnackbar(snackbarHostState, "Usuario registrado. Inicia sesión.")
+                            showSnack(scope, snackbarHostState, "Usuario registrado. Inicia sesión.")
                             navController.navigate("login") {
                                 popUpTo("register") { inclusive = true }
                                 launchSingleTop = true
@@ -163,15 +166,15 @@ fun RegisterScreen(navController: NavController) {
                         }
                         UserStore.AddResult.LIMIT_REACHED -> {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showSnackbar(snackbarHostState, "Se alcanzó el límite de 5 usuarios")
+                            showSnack(scope, snackbarHostState, "Se alcanzó el límite de 5 usuarios")
                         }
                         UserStore.AddResult.DUPLICATE -> {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showSnackbar(snackbarHostState, "El correo ya está registrado")
+                            showSnack(scope, snackbarHostState, "El correo ya está registrado")
                         }
                         UserStore.AddResult.INVALID -> {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showSnackbar(snackbarHostState, "Correo o contraseña inválidos")
+                            showSnack(scope, snackbarHostState, "Correo o contraseña inválidos")
                         }
                     }
                 },
@@ -197,13 +200,10 @@ private fun isValidEmail(email: String): Boolean =
 
 private fun isValidPassword(password: String): Boolean = password.length >= 6
 
-private suspend fun SnackbarHostState.safeShow(message: String) {
-    currentSnackbarData?.dismiss()
-    showSnackbar(message)
-}
-
-private fun showSnackbar(host: SnackbarHostState, message: String) {
-    androidx.compose.runtime.LaunchedEffect(message) {
-        host.safeShow(message)
+// Utilidad para mostrar snackbars desde eventos onClick
+private fun showSnack(scope: CoroutineScope, host: SnackbarHostState, message: String) {
+    scope.launch {
+        host.currentSnackbarData?.dismiss()
+        host.showSnackbar(message)
     }
 }

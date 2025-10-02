@@ -62,7 +62,7 @@ fun HomeScreen(navController: NavController) {
         Spacer(Modifier.height(24.dp))
 
         Text(
-            text = "Componentes requeridos (demo)",
+            text = "Componentes requeridos",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
@@ -74,7 +74,6 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 private fun ComponentsDemoSection() {
-    // COMBO (Exposed Dropdown)
     var expanded by remember { mutableStateOf(false) }
     val opciones = listOf("Opción A", "Opción B", "Opción C")
     var seleccion by remember { mutableStateOf(opciones.first()) }
@@ -116,12 +115,12 @@ private fun ComponentsDemoSection() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = chkLecturaPorVoz, onCheckedChange = { chkLecturaPorVoz = it })
             Spacer(Modifier.width(8.dp))
-            Text("Lectura por voz (demo)")
+            Text("Lectura por voz")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = chkAltoContraste, onCheckedChange = { chkAltoContraste = it })
             Spacer(Modifier.width(8.dp))
-            Text("Alto contraste (demo)")
+            Text("Alto contraste")
         }
     }
 

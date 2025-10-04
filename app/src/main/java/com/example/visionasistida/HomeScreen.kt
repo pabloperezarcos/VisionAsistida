@@ -9,71 +9,112 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-
+import com.example.visionasistida.accessibility.TtsManager
 import com.example.visionasistida.data.UserStore
 
 @Composable
 fun HomeScreen(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "¡Bienvenido a VisionAsistida!",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Spacer(Modifier.height(12.dp))
+    val context = LocalContext.current
+    // TTS para accesibilidad
+    val tts = remember { TtsManager(context) }
+    DisposableEffect(Unit) { onDispose { tts.shutdown() } }
 
-        Text(
-            text = "Usuarios registrados",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(8.dp))
-
-        // "Tabla" simple con encabezados y filas
-        HeaderRow()
-        Divider()
-
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = 4.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Inicio") },
+                actions = {
+                    // Botón para leer en voz alta un resumen de la pantalla
+                    TextButton(onClick = {
+                        val resumen = buildString {
+                            append("Bienvenido a Vision Asistida. ")
+                            append("Usuarios registrados: ${UserStore.users.size}. ")
+                            append("Controles disponibles: combo, casillas de verificación y opciones de radio.")
+                        }
+                        tts.speak(resumen)
+                    }) {
+                        Text("Leer", color = MaterialTheme.colorScheme.onPrimary)
+                    }
+                    // Botón de Cerrar sesión
+                    TextButton(onClick = {
+                        navController.navigate("login") {
+                            popUpTo("home") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }) {
+                        Text("Cerrar sesión", color = MaterialTheme.colorScheme.onPrimary)
+                    }
+                }
+            )
+        }
+    ) { inner ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)       // 👈 padding del Scaffold (evita solaparse con TopBar)
+                .padding(16.dp)       // 👈 margen adicional
         ) {
-            items(UserStore.users) { user ->
-                UserRow(email = user.email)
-                Divider()
-            }
-            // Si no hay usuarios, muestra contenido base
-            if (UserStore.users.isEmpty()) {
-                item {
-                    Text(
-                        text = "Aún no hay usuarios registrados. Puedes crear uno desde la pantalla Registro.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
+            // Título
+            Text(
+                text = "¡Bienvenido a VisionAsistida!",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Spacer(Modifier.height(12.dp))
+
+            // Tabla / Grilla de usuarios
+            Text(
+                text = "Usuarios registrados",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+
+            HeaderRow()
+            Divider()
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 4.dp)
+            ) {
+                items(UserStore.users) { user ->
+                    UserRow(email = user.email)
+                    Divider()
+                }
+                if (UserStore.users.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Aún no hay usuarios registrados. Puedes crear uno desde la pantalla Registro.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        )
+                    }
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
+
+            // Demo de componentes requeridos
+            Text(
+                text = "Componentes requeridos",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+
+            ComponentsDemoSection()
         }
-
-        Spacer(Modifier.height(24.dp))
-
-        Text(
-            text = "Componentes requeridos",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(8.dp))
-
-        ComponentsDemoSection()
     }
 }
 
+/* ----------------------------  Sección DEMO de componentes  ---------------------------- */
+
 @Composable
 private fun ComponentsDemoSection() {
+    // COMBO (Exposed Dropdown)
     var expanded by remember { mutableStateOf(false) }
     val opciones = listOf("Opción A", "Opción B", "Opción C")
     var seleccion by remember { mutableStateOf(opciones.first()) }
@@ -148,6 +189,7 @@ private fun ComponentsDemoSection() {
     }
 }
 
+/* ----------------------------  Tabla (encabezados + filas)  ---------------------------- */
 
 @Composable
 private fun HeaderRow() {

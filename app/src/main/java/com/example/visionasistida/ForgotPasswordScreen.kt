@@ -15,10 +15,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.visionasistida.data.UserStore
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.visionasistida.auth.AuthViewModel
 
 @Composable
 fun ForgotPasswordScreen(navController: NavController) {
@@ -26,14 +27,15 @@ fun ForgotPasswordScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // VM que consulta la DB (SQLite / Room)
+    val vm: AuthViewModel = viewModel()
+
     var email by remember { mutableStateOf("") }
     var emailTouched by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(title = { Text("Recuperar contraseña") })
-        }
+        topBar = { TopAppBar(title = { Text("Recuperar contraseña") }) }
     ) { inner ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -79,15 +81,16 @@ fun ForgotPasswordScreen(navController: NavController) {
                         return@Button
                     }
 
-                    // ¿Existe el correo?
-                    val exists = UserStore.users.any { it.email.equals(email.trim(), true) }
-
-                    if (exists) {
-                        // Simulación de envío de correo
-                        showSnack(scope, snackbarHostState, "Correo de recuperación enviado")
-                    } else {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showSnack(scope, snackbarHostState, "El correo no está registrado")
+                    //Consultar SQLite (suspend) para saber si existe el correo
+                    scope.launch {
+                        val exists = vm.emailExists(email)
+                        if (exists) {
+                            // Simulación de envío de correo
+                            showSnack(scope, snackbarHostState, "Correo de recuperación enviado")
+                        } else {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            showSnack(scope, snackbarHostState, "El correo no está registrado")
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

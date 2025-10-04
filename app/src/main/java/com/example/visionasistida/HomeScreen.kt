@@ -14,32 +14,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.visionasistida.accessibility.TtsManager
-import com.example.visionasistida.data.UserStore
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.visionasistida.users.UsersViewModel
 
 @Composable
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
-    // TTS para accesibilidad
     val tts = remember { TtsManager(context) }
     DisposableEffect(Unit) { onDispose { tts.shutdown() } }
+
+    val vm: UsersViewModel = viewModel()
+    val users = vm.users.collectAsStateWithLifecycle() // List<UserEntity>
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Inicio") },
                 actions = {
-                    // Botón para leer en voz alta un resumen de la pantalla
                     TextButton(onClick = {
                         val resumen = buildString {
                             append("Bienvenido a Vision Asistida. ")
-                            append("Usuarios registrados: ${UserStore.users.size}. ")
+                            append("Usuarios registrados: ${users.value.size}. ")
                             append("Controles disponibles: combo, casillas de verificación y opciones de radio.")
                         }
                         tts.speak(resumen)
                     }) {
                         Text("Leer", color = MaterialTheme.colorScheme.onPrimary)
                     }
-                    // Botón de Cerrar sesión
                     TextButton(onClick = {
                         navController.navigate("login") {
                             popUpTo("home") { inclusive = true }
@@ -55,10 +57,9 @@ fun HomeScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(inner)       // 👈 padding del Scaffold (evita solaparse con TopBar)
-                .padding(16.dp)       // 👈 margen adicional
+                .padding(inner)
+                .padding(16.dp)
         ) {
-            // Título
             Text(
                 text = "¡Bienvenido a VisionAsistida!",
                 style = MaterialTheme.typography.headlineMedium
@@ -80,11 +81,11 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                items(UserStore.users) { user ->
+                items(users.value, key = { it.id }) { user ->
                     UserRow(email = user.email)
                     Divider()
                 }
-                if (UserStore.users.isEmpty()) {
+                if (users.value.isEmpty()) {
                     item {
                         Text(
                             text = "Aún no hay usuarios registrados. Puedes crear uno desde la pantalla Registro.",

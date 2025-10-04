@@ -20,8 +20,6 @@ import androidx.navigation.NavController
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
-// imports para ViewModel (SQLite/Room)
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.visionasistida.auth.AuthViewModel
 

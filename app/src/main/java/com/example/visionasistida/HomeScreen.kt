@@ -5,27 +5,38 @@ package com.example.visionasistida
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.visionasistida.accessibility.TtsManager
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.visionasistida.users.UsersViewModel
+import com.example.visionasistida.data.UserEntity
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    isAdmin: Boolean = true
+) {
     val context = LocalContext.current
     val tts = remember { TtsManager(context) }
     DisposableEffect(Unit) { onDispose { tts.shutdown() } }
 
     val vm: UsersViewModel = viewModel()
-    val users = vm.users.collectAsStateWithLifecycle() // List<UserEntity>
+    val users = vm.users.collectAsStateWithLifecycle()
+
+    var toDelete by remember { mutableStateOf<UserEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -39,75 +50,107 @@ fun HomeScreen(navController: NavController) {
                             append("Controles disponibles: combo, casillas de verificación y opciones de radio.")
                         }
                         tts.speak(resumen)
-                    }) {
-                        Text("Leer", color = MaterialTheme.colorScheme.onPrimary)
-                    }
+                    }) { Text("Leer", color = MaterialTheme.colorScheme.onPrimary) }
+
                     TextButton(onClick = {
                         navController.navigate("login") {
                             popUpTo("home") { inclusive = true }
                             launchSingleTop = true
                         }
-                    }) {
-                        Text("Cerrar sesión", color = MaterialTheme.colorScheme.onPrimary)
-                    }
+                    }) { Text("Cerrar sesión", color = MaterialTheme.colorScheme.onPrimary) }
                 }
             )
         }
     ) { inner ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(inner)
-                .padding(16.dp)
+                .padding(16.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "¡Bienvenido a VisionAsistida!",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(Modifier.height(12.dp))
+            // Título
+            item {
+                Text(
+                    text = "¡Bienvenido a VisionAsistida!",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+            }
 
-            // Tabla / Grilla de usuarios
-            Text(
-                text = "Usuarios registrados",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(8.dp))
+            // Sección: Usuarios
+            item {
+                Text(
+                    text = "Usuarios registrados",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                HeaderRow(showAction = isAdmin)
+                Divider()
+            }
 
-            HeaderRow()
-            Divider()
+            items(users.value, key = { it.id }) { user ->
+                UserRow(
+                    user = user,
+                    showAction = isAdmin,
+                    onDelete = { toDelete = user }
+                )
+                Divider()
+            }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                items(users.value, key = { it.id }) { user ->
-                    UserRow(email = user.email)
-                    Divider()
-                }
-                if (users.value.isEmpty()) {
-                    item {
-                        Text(
-                            text = "Aún no hay usuarios registrados. Puedes crear uno desde la pantalla Registro.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 12.dp)
-                        )
-                    }
+            if (users.value.isEmpty()) {
+                item {
+                    Text(
+                        text = "Aún no hay usuarios registrados. Puedes crear uno desde la pantalla Registro.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            // Separador grande antes de “Componentes”
+            item { Spacer(Modifier.height(16.dp)) }
 
-            // Demo de componentes requeridos
-            Text(
-                text = "Componentes requeridos",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(8.dp))
-
-            ComponentsDemoSection()
+            // Sección: Componentes requeridos
+            item {
+                Text(
+                    text = "Componentes requeridos",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                ComponentsDemoSection()
+            }
         }
+    }
+
+    // Diálogo de confirmación de eliminación
+    if (toDelete != null) {
+        AlertDialog(
+            onDismissRequest = { toDelete = null },
+            title = { Text("Confirmar eliminación") },
+            text = { Text("¿Eliminar al usuario ${toDelete!!.email}?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        vm.deleteUser(toDelete!!.id)
+                        toDelete = null
+                    },
+                    modifier = Modifier.semantics {
+                        contentDescription = "Confirmar eliminación de usuario"
+                    }
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { toDelete = null },
+                    modifier = Modifier.semantics {
+                        contentDescription = "Cancelar eliminación de usuario"
+                    }
+                ) { Text("Cancelar") }
+            }
+        )
     }
 }
 
@@ -193,7 +236,7 @@ private fun ComponentsDemoSection() {
 /* ----------------------------  Tabla (encabezados + filas)  ---------------------------- */
 
 @Composable
-private fun HeaderRow() {
+private fun HeaderRow(showAction: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -201,19 +244,35 @@ private fun HeaderRow() {
     ) {
         Text("Email", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
         Text("Estado", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.labelLarge)
-        Text("Acción", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.labelLarge)
+        if (showAction) {
+            Text("Acción", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.labelLarge)
+        }
     }
 }
 
 @Composable
-private fun UserRow(email: String) {
+private fun UserRow(
+    user: UserEntity,
+    showAction: Boolean,
+    onDelete: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(email, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Text(user.email, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
         Text("Activo", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.bodyMedium)
-        Text("Ver", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.bodyMedium)
+        if (showAction) {
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier
+                    .weight(0.5f)
+                    .semantics { contentDescription = "Eliminar usuario ${user.email}" }
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = null)
+            }
+        }
     }
 }

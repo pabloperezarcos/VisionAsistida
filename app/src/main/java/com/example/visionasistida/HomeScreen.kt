@@ -78,6 +78,15 @@ fun HomeScreen(
                 )
             }
 
+            // Navegacion
+            item {
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = { navController.navigate("features/location") },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Abrir Ubicación") }
+            }
+
             // Sección: Usuarios
             item {
                 Text(

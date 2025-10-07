@@ -17,16 +17,21 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.visionasistida.data.UserStore
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.visionasistida.auth.AuthViewModel
+import com.example.visionasistida.data.UserRepository
 
 @Composable
 fun RegisterScreen(navController: NavController) {
     val haptics = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // VM que interactúa con SQLite
+    val vm: AuthViewModel = viewModel()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -142,7 +147,7 @@ fun RegisterScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    // Validación de campos
+                    // Validación local
                     val emailOk = isValidEmail(email)
                     val passOk = isValidPassword(password)
                     val confirmOk = confirmPassword == password
@@ -154,27 +159,29 @@ fun RegisterScreen(navController: NavController) {
                         return@Button
                     }
 
-                    when (UserStore.addUser(email, password)) {
-                        UserStore.AddResult.OK -> {
-                            // Limpia y vuelve al login sin dejar rastro en back stack
-                            email = ""; password = ""; confirmPassword = ""
-                            showSnack(scope, snackbarHostState, "Usuario registrado. Inicia sesión.")
-                            navController.navigate("login") {
-                                popUpTo("register") { inclusive = true }
-                                launchSingleTop = true
+                    // Registro en SQLite vía VM
+                    scope.launch {
+                        when (vm.register(email, password)) {
+                            UserRepository.AddResult.OK -> {
+                                email = ""; password = ""; confirmPassword = ""
+                                showSnack(scope, snackbarHostState, "Usuario registrado. Inicia sesión.")
+                                navController.navigate("login") {
+                                    popUpTo("register") { inclusive = true }
+                                    launchSingleTop = true
+                                }
                             }
-                        }
-                        UserStore.AddResult.LIMIT_REACHED -> {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showSnack(scope, snackbarHostState, "Se alcanzó el límite de 5 usuarios")
-                        }
-                        UserStore.AddResult.DUPLICATE -> {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showSnack(scope, snackbarHostState, "El correo ya está registrado")
-                        }
-                        UserStore.AddResult.INVALID -> {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showSnack(scope, snackbarHostState, "Correo o contraseña inválidos")
+                            UserRepository.AddResult.LIMIT_REACHED -> {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                showSnack(scope, snackbarHostState, "Se alcanzó el límite de 5 usuarios")
+                            }
+                            UserRepository.AddResult.DUPLICATE -> {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                showSnack(scope, snackbarHostState, "El correo ya está registrado")
+                            }
+                            UserRepository.AddResult.INVALID -> {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                showSnack(scope, snackbarHostState, "Correo o contraseña inválidos")
+                            }
                         }
                     }
                 },

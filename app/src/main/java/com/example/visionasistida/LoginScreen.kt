@@ -17,16 +17,20 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.visionasistida.data.UserStore
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.visionasistida.auth.AuthViewModel
 
 @Composable
 fun LoginScreen(navController: NavController) {
     val haptics = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Instancia del ViewModel que se comunica con SQLite
+    val vm: AuthViewModel = viewModel()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -104,10 +108,9 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Botón Iniciar Sesión
+            // Botón Iniciar Sesión (usa SQLite a través de AuthViewModel)
             Button(
                 onClick = {
-
                     if (!isValidEmail(email) || password.isBlank()) {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         emailTouched = true
@@ -116,19 +119,21 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
-                    val ok = UserStore.validateLogin(email, password)
-                    if (ok) {
-                        // Limpiar campos y navegar sin volver atrás a Login
-                        email = ""
-                        password = ""
-                        showSnack(scope, snackbarHostState, "Bienvenido/a")
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
-                            launchSingleTop = true
+                    // Validación contra SQLite
+                    scope.launch {
+                        val ok = vm.login(email, password)
+                        if (ok) {
+                            email = ""
+                            password = ""
+                            showSnack(scope, snackbarHostState, "Bienvenido/a")
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            showSnack(scope, snackbarHostState, "Correo o contraseña inválidos")
                         }
-                    } else {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showSnack(scope, snackbarHostState, "Correo o contraseña inválidos")
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

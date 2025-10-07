@@ -42,5 +42,6 @@ fun VisionAsistidaApp(navController: NavHostController, modifier: Modifier = Mod
         composable("register")       { RegisterScreen(navController) }
         composable("forgot_password"){ ForgotPasswordScreen(navController) }
         composable("home")           { HomeScreen(navController) }
+        composable("features/location") { com.example.visionasistida.ui.location.LocationScreen() }
     }
 }

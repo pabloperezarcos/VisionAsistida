@@ -135,6 +135,17 @@ fun HomeScreen(
                 Spacer(Modifier.height(8.dp))
                 ComponentsDemoSection()
             }
+
+            item {
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = { navController.navigate("help") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Abrir Ayuda / Tutorial")
+                }
+            }
+
         }
     }
 

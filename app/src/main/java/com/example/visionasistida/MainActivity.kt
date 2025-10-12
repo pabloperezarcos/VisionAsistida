@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.visionasistida.ui.theme.VisionAsistidaTheme
 
 class MainActivity : ComponentActivity() {
@@ -35,9 +35,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun VisionAsistidaApp(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(navController = navController, startDestination = "login", modifier = modifier) {
-        composable("login")            { LoginScreen(navController) }
-        composable("register")         { RegisterScreen(navController) }
-        composable("forgot_password")  { ForgotPasswordScreen(navController) }
+        composable("login") { LoginScreen(navController) }
+        composable("register") { RegisterScreen(navController) }
+        composable("forgot_password") { ForgotPasswordScreen(navController) }
+        composable("help") { com.example.visionasistida.ui.help.HelpScreen(navController) }
 
         composable(
             route = "home?name={name}",

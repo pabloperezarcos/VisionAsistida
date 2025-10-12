@@ -27,7 +27,8 @@ import com.example.visionasistida.data.UserEntity
 @Composable
 fun HomeScreen(
     navController: NavController,
-    isAdmin: Boolean = true
+    isAdmin: Boolean = true,
+    greetedName: String? = null //nombre opcional para saludar
 ) {
     val context = LocalContext.current
     val tts = remember { TtsManager(context) }
@@ -44,8 +45,9 @@ fun HomeScreen(
                 title = { Text("Inicio") },
                 actions = {
                     TextButton(onClick = {
+                        val nombre = greetedName ?: "usuario"
                         val resumen = buildString {
-                            append("Bienvenido a Vision Asistida. ")
+                            append("Bienvenido, $nombre, a Vision Asistida. ")
                             append("Usuarios registrados: ${users.value.size}. ")
                             append("Controles disponibles: combo, casillas de verificación y opciones de radio.")
                         }
@@ -70,15 +72,17 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Título
+            // Saludo (usa el nombre si viene)
             item {
+                val nombre = greetedName ?: "Usuario"
                 Text(
-                    text = "¡Bienvenido a VisionAsistida!",
-                    style = MaterialTheme.typography.headlineMedium
+                    text = "¡Bienvenido, $nombre!",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
-            // Navegacion
+            // Navegación rápida
             item {
                 Spacer(Modifier.height(16.dp))
                 Button(

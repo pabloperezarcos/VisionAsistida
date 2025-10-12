@@ -2,7 +2,6 @@ package com.example.visionasistida.auth
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.visionasistida.data.AppDatabase
 import com.example.visionasistida.data.UserRepository
 import kotlinx.coroutines.Dispatchers
@@ -19,4 +18,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     suspend fun emailExists(email: String): Boolean =
         withContext(Dispatchers.IO) { repo.existsEmail(email) }
+
+    suspend fun getDisplayName(email: String): String? =
+        withContext(Dispatchers.IO) { repo.getDisplayName(email) }
 }

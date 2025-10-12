@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.example.visionasistida
 
@@ -123,10 +123,12 @@ fun LoginScreen(navController: NavController) {
                     scope.launch {
                         val ok = vm.login(email, password)
                         if (ok) {
-                            email = ""
-                            password = ""
-                            showSnack(scope, snackbarHostState, "Bienvenido/a")
-                            navController.navigate("home") {
+                            val name = vm.getDisplayName(email) ?: "Usuario"
+                            val encoded = java.net.URLEncoder.encode(
+                                name,
+                                java.nio.charset.StandardCharsets.UTF_8.toString()
+                            )
+                            navController.navigate("home?name=$encoded") {
                                 popUpTo("login") { inclusive = true }
                                 launchSingleTop = true
                             }
